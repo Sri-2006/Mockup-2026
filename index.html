@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SRIKUNJ.G — HERO.OS v2.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root {
+  --bg:#07071a; --bg2:#0d0d2b; --panel:#0e0e30;
+  --border:#2a2a6e; --green:#39ff87; --cyan:#00e5ff;
+  --yellow:#ffd600; --red:#ff3a5c; --purple:#bf5fff;
+  --orange:#ff7c00; --white:#e8e8ff; --dim:#5a5a9a;
+  --spd:1;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden}
+body{
+  font-family:'Press Start 2P',monospace;font-size:10px;
+  color:var(--white);background:#000;
+  cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Crect x='0' y='0' width='4' height='4' fill='%2339ff87'/%3E%3Crect x='4' y='4' width='4' height='4' fill='%2339ff87'/%3E%3Crect x='8' y='8' width='4' height='4' fill='%2339ff87'/%3E%3C/svg%3E"),auto;
+}
+
+/* ── THREE.JS BG CANVAS ── */
+#bg-canvas{position:fixed;inset:0;z-index:0;display:block}
+
+/* ── CRT OVERLAY ── */
+#crt{
+  position:fixed;inset:0;z-index:9000;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.13) 2px,rgba(0,0,0,.13) 4px);
+  animation:flicker 9s infinite;
+}
+#crt::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,10,.75) 100%)}
+@keyframes flicker{0%,94%,100%{opacity:1}95%{opacity:.93}97%{opacity:.97}98%{opacity:.94}}
+
+/* ── BATTLE FLASH ── */
+#battle-flash{position:fixed;inset:0;z-index:8000;background:#fff;opacity:0;pointer-events:none;transition:opacity .08s}
+#battle-flash.flash{opacity:1}
+
+/* ── SCREENS ── */
+.screen{
+  position:fixed;inset:0;z-index:1;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transition:opacity calc(.5s * var(--spd)) ease,transform calc(.5s * var(--spd)) ease;
+}
+.screen.hidden{opacity:0;pointer-events:none;transform:scale(.96)}
+
+/* ═══════════ BOOT ═══════════ */
+#boot{background:transparent}
+#boot-glass{
+  background:rgba(7,7,26,.88);
+  border:3px solid rgba(57,255,135,.3);
+  box-shadow:0 0 40px rgba(0,229,255,.1),inset 0 0 30px rgba(0,0,0,.5);
+  padding:32px 40px;width:min(560px,92vw);
+}
+#boot-title{
+  font-size:clamp(14px,3.5vw,22px);color:var(--green);
+  text-shadow:0 0 20px rgba(57,255,135,.8),3px 3px 0 #006633;
+  letter-spacing:3px;text-align:center;margin-bottom:24px;
+  animation:title-glow 2s ease-in-out infinite;
+}
+@keyframes title-glow{0%,100%{text-shadow:0 0 20px rgba(57,255,135,.8),3px 3px 0 #006633}50%{text-shadow:0 0 40px rgba(57,255,135,1),3px 3px 0 #006633,0 0 60px rgba(57,255,135,.4)}}
+#boot-sub{font-size:7px;color:var(--dim);text-align:center;margin-bottom:20px;letter-spacing:2px}
+#boot-log{font-family:'VT323',monospace;font-size:18px;color:var(--green);margin-bottom:16px}
+#boot-log div{opacity:0;animation:bootline .2s forwards}
+#boot-log div:nth-child(1){animation-delay:.3s}
+#boot-log div:nth-child(2){animation-delay:.8s}
+#boot-log div:nth-child(3){animation-delay:1.3s}
+#boot-log div:nth-child(4){animation-delay:1.8s}
+#boot-log div:nth-child(5){animation-delay:2.3s;color:var(--cyan)}
+#boot-log div:nth-child(6){animation-delay:2.8s;color:var(--yellow)}
+@keyframes bootline{to{opacity:1}}
+#boot-bar-wrap{margin-bottom:16px}
+#boot-bar{height:14px;background:#0a0a20;border:2px solid var(--green);overflow:hidden}
+#boot-bar-inner{height:100%;width:0;background:linear-gradient(90deg,#006633,var(--green));animation:bootfill 3s 3s ease forwards}
+@keyframes bootfill{to{width:100%}}
+#boot-press{font-size:9px;color:var(--white);text-align:center;opacity:0;animation:show-press 0s 6.2s forwards}
+@keyframes show-press{to{opacity:1}}
+#boot-press span{animation:blink 1s infinite;display:inline-block}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ═══════════ CHAR SELECT ═══════════ */
+#charselect{background:transparent;gap:16px}
+#charselect-glass{
+  background:rgba(7,7,26,.82);border:2px solid rgba(0,229,255,.25);
+  box-shadow:0 0 60px rgba(0,229,255,.08);
+  padding:24px 20px;width:min(820px,96vw);
+}
+#cs-title{
+  font-size:clamp(10px,2.2vw,16px);color:var(--yellow);
+  text-shadow:3px 3px 0 #7c6000;letter-spacing:2px;
+  text-align:center;margin-bottom:6px;
+}
+#cs-sub{font-size:7px;color:var(--dim);text-align:center;margin-bottom:20px}
+.char-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.char-card{
+  background:rgba(13,13,43,.9);
+  border:3px solid var(--border);
+  padding:16px 12px;cursor:pointer;
+  transition:transform calc(.15s * var(--spd)),border-color calc(.15s * var(--spd)),box-shadow calc(.15s * var(--spd));
+  text-align:center;position:relative;overflow:hidden;
+}
+.char-card::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,transparent 60%,rgba(255,255,255,.03));
+  pointer-events:none;
+}
+.char-card:hover,.char-card.selected{
+  transform:translateY(-6px) scale(1.02);
+  border-color:var(--green);
+  box-shadow:0 8px 0 #000,0 0 24px rgba(57,255,135,.4),inset 0 0 20px rgba(57,255,135,.05);
+}
+.char-card.selected::after{
+  content:'▶ SELECTED ◀';position:absolute;bottom:6px;left:50%;transform:translateX(-50%);
+  font-size:6px;color:var(--green);white-space:nowrap;
+}
+.char-sprite{width:64px;height:80px;margin:0 auto 10px;image-rendering:pixelated;display:block}
+.char-name{font-size:8px;color:var(--yellow);margin-bottom:4px}
+.char-class{font-size:6px;color:var(--dim);margin-bottom:10px}
+.char-stat{display:flex;align-items:center;gap:5px;margin:4px 0;font-size:6px}
+.char-stat-label{width:64px;color:var(--dim);text-align:right;flex-shrink:0}
+.char-stat-bar{flex:1;height:6px;background:#1a1a3a;border:1px solid #2a2a6e}
+.char-stat-fill{height:100%}
+.stat-s{background:var(--red)}.stat-i{background:var(--cyan)}.stat-c{background:var(--purple)}.stat-d{background:var(--orange)}
+#choose-btn{
+  background:var(--green);color:#000;border:none;
+  padding:12px 32px;font-family:'Press Start 2P',monospace;font-size:10px;
+  cursor:pointer;box-shadow:4px 4px 0 #006633;
+  transition:transform calc(.1s * var(--spd)),box-shadow calc(.1s * var(--spd));
+  margin-top:8px;
+}
+#choose-btn:hover{transform:translateY(-2px);box-shadow:4px 6px 0 #006633}
+#choose-btn:active{transform:translateY(2px);box-shadow:2px 2px 0 #006633}
+
+/* ═══════════ WORLD MAP ═══════════ */
+#worldmap{flex-direction:row;align-items:stretch;justify-content:flex-start;background:transparent}
+#hud-left{
+  width:190px;background:rgba(10,10,40,.95);
+  border-right:4px solid var(--border);
+  display:flex;flex-direction:column;padding:10px;gap:8px;flex-shrink:0;z-index:2;
+}
+#hud-portrait{
+  width:68px;height:68px;margin:0 auto;
+  border:3px solid var(--green);
+  box-shadow:0 0 12px rgba(57,255,135,.5);
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+}
+.hud-name{text-align:center;font-size:8px;color:var(--yellow);margin-top:4px}
+.hud-class{text-align:center;font-size:6px;color:var(--dim)}
+hr.hdiv{border:none;border-top:2px solid var(--border)}
+.hud-bar-wrap{font-size:6px}
+.hud-bar-label{display:flex;justify-content:space-between;color:var(--dim);margin-bottom:2px}
+.hud-bar{height:9px;background:#0a0a20;border:2px solid var(--border)}
+.hf-hp{height:100%;background:var(--green);width:100%}
+.hf-mp{height:100%;background:var(--cyan);width:80%}
+.hf-xp{height:100%;background:var(--yellow);width:55%}
+.hud-sec{font-size:6px;color:var(--cyan);margin-bottom:4px}
+.quest-mini{font-size:6px;color:var(--dim);display:flex;gap:5px;align-items:flex-start;margin-bottom:3px;cursor:pointer;line-height:1.6}
+.quest-mini:hover{color:var(--white)}
+.qi{color:var(--green)}.qi.e{color:#2a2a6e}
+.hud-nav{display:flex;flex-direction:column;gap:5px;margin-top:auto}
+.hbtn{
+  background:transparent;border:2px solid var(--border);color:var(--dim);
+  font-family:'Press Start 2P',monospace;font-size:6px;
+  padding:5px 7px;cursor:pointer;text-align:left;transition:all .15s;
+}
+.hbtn:hover{border-color:var(--cyan);color:var(--cyan)}
+#speedrun-btn{
+  background:#1a0800;border:2px solid var(--yellow);color:var(--yellow);
+  font-family:'Press Start 2P',monospace;font-size:6px;
+  padding:5px 7px;cursor:pointer;text-align:center;
+}
+#speedrun-btn.on{background:var(--yellow);color:#000}
+#map-area{
+  flex:1;position:relative;overflow:hidden;
+  background:transparent;
+}
+/* HTML nodes overlay on top of Three.js terrain */
+#map-nodes{position:absolute;inset:0;z-index:2;pointer-events:none}
+.map-node{
+  position:absolute;transform:translate(-50%,-50%);
+  display:flex;flex-direction:column;align-items:center;
+  cursor:pointer;pointer-events:all;
+  transition:transform calc(.2s * var(--spd));
+}
+.map-node:hover{transform:translate(-50%,-60%) scale(1.12)}
+.node-icon{
+  width:54px;height:54px;border:3px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;background:rgba(10,10,40,.9);
+  box-shadow:4px 4px 0 #000;transition:all .2s;
+}
+.map-node:hover .node-icon,.map-node.vis .node-icon{
+  border-color:var(--green);
+  box-shadow:4px 4px 0 #000,0 0 18px rgba(57,255,135,.6);
+}
+.node-label{
+  margin-top:5px;font-size:6px;color:var(--white);
+  background:rgba(0,0,0,.85);padding:2px 6px;white-space:nowrap;
+  box-shadow:2px 2px 0 #000;
+}
+.node-badge{
+  position:absolute;top:-6px;right:-6px;background:var(--green);
+  color:#000;font-size:5px;padding:1px 3px;display:none;
+}
+.map-node.vis .node-badge{display:block}
+
+/* ═══════════ PANEL OVERLAY ═══════════ */
+#panel-overlay{
+  position:fixed;inset:0;z-index:500;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,10,.88);
+  opacity:0;pointer-events:none;
+  transition:opacity calc(.3s * var(--spd));
+}
+#panel-overlay.open{opacity:1;pointer-events:all}
+.panel-win{
+  background:var(--panel);width:min(860px,96vw);max-height:92vh;
+  overflow-y:auto;position:relative;
+}
+.panel-win::-webkit-scrollbar{width:6px}
+.panel-win::-webkit-scrollbar-track{background:#0a0a20}
+.panel-win::-webkit-scrollbar-thumb{background:var(--border)}
+.panel-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;border-bottom:4px solid var(--border);
+  background:rgba(0,229,255,.04);position:sticky;top:0;z-index:10;
+}
+.panel-title{font-size:11px;color:var(--cyan)}
+.panel-close{
+  background:var(--red);border:none;color:#fff;
+  font-family:'Press Start 2P',monospace;font-size:9px;
+  width:30px;height:30px;cursor:pointer;
+  box-shadow:3px 3px 0 #7a0020;transition:transform .1s;
+}
+.panel-close:hover{transform:scale(1.1)}
+.panel-body{padding:20px}
+
+/* Panel canvas for 3D mini-scenes */
+#panel-3d-canvas{
+  display:block;width:100%;height:200px;margin-bottom:16px;
+  image-rendering:pixelated;background:transparent;
+}
+
+/* ── BIO ── */
+.bio-grid{display:grid;grid-template-columns:160px 1fr;gap:20px;align-items:start}
+.bio-portrait{
+  width:160px;height:180px;border:3px solid var(--green);
+  box-shadow:4px 4px 0 #000,0 0 18px rgba(57,255,135,.3);
+  display:flex;align-items:center;justify-content:center;background:#0a1a10;
+  image-rendering:pixelated;
+}
+.bio-text h2{font-size:14px;color:var(--yellow);margin-bottom:8px}
+.bio-sub{font-size:8px;color:var(--green);margin-bottom:10px}
+.bio-text p{font-size:7px;color:#aaa8cc;line-height:2;margin-bottom:10px}
+.rpg-tag{
+  display:inline-block;background:#0a0a20;border:2px solid var(--purple);
+  color:var(--purple);font-size:6px;padding:3px 7px;margin:3px;box-shadow:2px 2px 0 #000;
+}
+.rpg-tag.g{border-color:var(--green);color:var(--green)}
+.rpg-tag.y{border-color:var(--yellow);color:var(--yellow)}
+.rpg-tag.r{border-color:var(--red);color:var(--red)}
+
+/* ── SKILLS ── */
+.skills-title{font-size:9px;color:var(--yellow);margin:14px 0 8px;border-bottom:2px solid var(--border);padding-bottom:4px}
+.sk-row{display:flex;align-items:center;gap:8px;margin:7px 0}
+.sk-name{width:130px;font-size:7px;color:var(--white);flex-shrink:0}
+.sk-bar{flex:1;height:14px;background:#0a0a20;border:2px solid var(--border);overflow:hidden}
+.sk-fill{height:100%;width:0;position:relative;transition:width calc(1.2s * var(--spd)) cubic-bezier(.22,1,.36,1)}
+.sk-fill::after{content:'';position:absolute;right:0;top:0;bottom:0;width:3px;background:rgba(255,255,255,.6);animation:pb 1.5s infinite}
+@keyframes pb{0%,100%{opacity:1}50%{opacity:0}}
+.sk-lv{font-size:6px;color:var(--cyan);width:28px;text-align:right;flex-shrink:0}
+.sk-bonus{font-size:6px;color:var(--yellow);width:50px;text-align:right;flex-shrink:0}
+.passive-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.passive{background:#0a0a20;border:2px solid var(--border);padding:7px 9px;font-size:6px;color:var(--purple)}
+
+/* ── BOSS / PROJECTS ── */
+.boss-card{background:#0a0a22;border:3px solid var(--red);box-shadow:4px 4px 0 #000,0 0 12px rgba(255,58,92,.2);margin-bottom:18px}
+.boss-hdr{background:linear-gradient(135deg,#2a0010,#160008);padding:12px 14px;display:flex;align-items:center;gap:10px;border-bottom:3px solid #3a0018}
+.boss-ico{font-size:26px}
+.boss-stage{font-size:7px;color:var(--red)}
+.boss-name{font-size:10px;color:var(--white);margin-top:2px}
+.boss-body{padding:12px 14px}
+.boss-hp-lbl{font-size:6px;color:var(--dim);margin-bottom:3px}
+.boss-hp-bar{height:11px;background:#1a0008;border:2px solid #3a0018;margin-bottom:10px}
+.boss-hp-fill{height:100%;background:linear-gradient(90deg,#660020,var(--red))}
+.boss-desc{font-size:7px;color:#aaa8cc;line-height:2;margin-bottom:10px}
+.boss-tech{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.tech-badge{background:#0a0a20;border:2px solid var(--cyan);color:var(--cyan);font-size:6px;padding:3px 8px;box-shadow:2px 2px 0 #000}
+.loot-sec{background:#0a1a0a;border:2px solid var(--green);padding:9px 12px}
+.loot-title{font-size:7px;color:var(--green);margin-bottom:7px}
+.loot-item{display:flex;align-items:center;gap:7px;margin:4px 0;font-size:7px}
+.loot-gem{width:12px;height:12px;border:2px solid;flex-shrink:0}
+.lg{background:var(--yellow);border-color:#a07000}.lb{background:var(--cyan);border-color:#006080}.lp{background:var(--purple);border-color:#6020a0}
+
+/* ── CONTACT ── */
+.save-wrap{text-align:center;padding:10px 0}
+.save-orb{
+  width:90px;height:90px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#a0ffd0,var(--green),#006633);
+  border:4px solid var(--green);
+  box-shadow:0 0 30px rgba(57,255,135,.7),0 0 70px rgba(57,255,135,.2);
+  margin:0 auto 18px;animation:orb-pulse 3s ease-in-out infinite;
+}
+@keyframes orb-pulse{0%,100%{transform:scale(1);box-shadow:0 0 30px rgba(57,255,135,.7),0 0 70px rgba(57,255,135,.2)}50%{transform:scale(1.06);box-shadow:0 0 50px rgba(57,255,135,1),0 0 100px rgba(57,255,135,.4)}}
+.save-title{font-size:12px;color:var(--green);margin-bottom:6px}
+.save-sub{font-size:7px;color:var(--dim);margin-bottom:22px}
+.c-links{display:flex;flex-direction:column;gap:9px;width:280px;margin:0 auto}
+.c-link{
+  display:flex;align-items:center;gap:10px;
+  background:rgba(13,13,43,.95);border:2px solid var(--border);
+  padding:10px 14px;cursor:pointer;text-decoration:none;
+  color:var(--white);font-family:'Press Start 2P',monospace;font-size:7px;
+  box-shadow:3px 3px 0 #000;transition:all .15s;
+}
+.c-link:hover{border-color:var(--green);color:var(--green);transform:translateX(4px)}
+.c-ico{font-size:16px}
+
+/* ── INVENTORY ── */
+.inv-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.inv-slot{
+  background:#0a0a20;border:3px solid var(--border);aspect-ratio:1;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:5px;cursor:pointer;transition:all .15s;position:relative;padding:6px;
+}
+.inv-slot:hover{border-color:var(--yellow);box-shadow:0 0 14px rgba(255,214,0,.4)}
+.inv-slot.empty{opacity:.3;cursor:default}
+.inv-slot.empty:hover{border-color:var(--border);box-shadow:none}
+.inv-ico{font-size:26px}
+.inv-nm{font-size:5px;text-align:center;color:var(--white)}
+.inv-rar{font-size:5px;position:absolute;top:3px;right:3px}
+.r-leg{color:var(--yellow)}.r-rare{color:var(--purple)}.r-com{color:var(--dim)}
+.chest-ico{font-size:56px;animation:chest-b 2s ease-in-out infinite;display:block;margin:0 auto;cursor:pointer}
+@keyframes chest-b{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+
+/* ── QUEST LOG ── */
+.ql-header{display:flex;align-items:center;gap:20px;margin-bottom:18px}
+.ql-pct{font-size:22px;color:var(--green);display:block;margin-bottom:3px}
+.ql-sub{font-size:7px;color:var(--dim)}
+.ql-item{display:flex;align-items:center;gap:9px;background:#0a0a20;border:2px solid var(--border);padding:9px 12px;margin-bottom:7px}
+.ql-item.done{border-color:#1a3a1a;background:#0a140a}
+.ql-item.done .ql-nm{color:var(--green)}
+.ql-chk{font-size:13px;flex-shrink:0}
+.ql-nm{font-size:7px;flex:1}
+.ql-xp{font-size:7px;color:var(--yellow)}
+.ql-total{font-size:8px;color:var(--yellow);text-align:center;margin-top:14px}
+
+/* ── DIALOGUE ── */
+#dialogue{
+  position:fixed;bottom:18px;left:50%;transform:translateX(-50%);
+  width:min(640px,96vw);z-index:600;
+  background:rgba(13,13,43,.97);border:4px solid var(--cyan);
+  box-shadow:6px 6px 0 #000,0 0 20px rgba(0,229,255,.2);
+  padding:12px 14px;opacity:0;pointer-events:none;
+  transition:opacity calc(.3s * var(--spd));display:flex;gap:10px;align-items:flex-start;
+}
+#dialogue.show{opacity:1}
+#dlg-portrait{width:44px;height:44px;border:2px solid var(--cyan);flex-shrink:0}
+#dlg-text{font-size:8px;line-height:2;flex:1}
+#dlg-name{font-size:9px;color:var(--cyan);margin-bottom:3px}
+#dlg-cont{font-size:6px;color:var(--green);align-self:flex-end;animation:blink 1s infinite}
+@media(max-width:600px){.char-grid{grid-template-columns:1fr 1fr}.bio-grid{grid-template-columns:1fr}.inv-grid{grid-template-columns:repeat(3,1fr)}#hud-left{width:140px;padding:7px}}
+</style>
+</head>
+<body>
+
+<!-- ── THREE.JS BACKGROUND ── -->
+<canvas id="bg-canvas"></canvas>
+<div id="crt" aria-hidden="true"></div>
+<div id="battle-flash" aria-hidden="true"></div>
+
+<!-- ══════════════════════════════════════════════
+     SCREEN 1: BOOT
+══════════════════════════════════════════════ -->
+<div class="screen" id="boot">
+  <div id="boot-glass">
+    <div id="boot-title">SRIKUNJ.G — HERO.OS v2.0</div>
+    <div id="boot-sub">DRONE PILOT · FULL-STACK MAGE · DESIGN LORD</div>
+    <div id="boot-log" aria-live="polite">
+      <div>▶ HERO.OS KERNEL LOADING...</div>
+      <div>▶ Mounting drone firmware...&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--green)">OK</span></div>
+      <div>▶ Calibrating creative matrix...&nbsp;<span style="color:var(--green)">OK</span></div>
+      <div>▶ Syncing quest database...&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:var(--green)">OK</span></div>
+      <div>▶ All systems nominal. Welcome, Recruiter.</div>
+      <div>▶ Aerospace · Robotics · Web Dev · Design</div>
+    </div>
+    <div id="boot-bar-wrap"><div id="boot-bar"><div id="boot-bar-inner"></div></div></div>
+    <div id="boot-press"><span>▶ CLICK OR PRESS ANY KEY TO BEGIN ◀</span></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SCREEN 2: CHARACTER SELECT
+══════════════════════════════════════════════ -->
+<div class="screen hidden" id="charselect">
+  <div id="charselect-glass">
+    <div id="cs-title">— CHOOSE YOUR LOADOUT —</div>
+    <div id="cs-sub">SRIKUNJ G · LVL 20 RENAISSANCE ENGINEER</div>
+    <div class="char-grid">
+      <div class="char-card" data-c="0" onclick="selectChar(0)" tabindex="0">
+        <canvas class="char-sprite" id="sp0" width="64" height="80"></canvas>
+        <div class="char-name">DRONE PILOT</div>
+        <div class="char-class">▸ AEROSPACE · IoT ENGINEER</div>
+        <div class="char-stat"><span class="char-stat-label">AUTONOMY</span><div class="char-stat-bar"><div class="char-stat-fill stat-s" style="width:92%"></div></div><span style="font-size:6px;color:var(--red)">+18</span></div>
+        <div class="char-stat"><span class="char-stat-label">SENSORS</span><div class="char-stat-bar"><div class="char-stat-fill stat-i" style="width:88%"></div></div><span style="font-size:6px;color:var(--cyan)">+17</span></div>
+        <div class="char-stat"><span class="char-stat-label">ROBOTICS</span><div class="char-stat-bar"><div class="char-stat-fill stat-d" style="width:85%"></div></div><span style="font-size:6px;color:var(--orange)">+17</span></div>
+        <div class="char-stat"><span class="char-stat-label">DESIGN</span><div class="char-stat-bar"><div class="char-stat-fill stat-c" style="width:60%"></div></div><span style="font-size:6px;color:var(--purple)">+12</span></div>
+      </div>
+      <div class="char-card" data-c="1" onclick="selectChar(1)" tabindex="0">
+        <canvas class="char-sprite" id="sp1" width="64" height="80"></canvas>
+        <div class="char-name">CODE MAGE</div>
+        <div class="char-class">▸ FULL-STACK DEVELOPER</div>
+        <div class="char-stat"><span class="char-stat-label">LOGIC</span><div class="char-stat-bar"><div class="char-stat-fill stat-i" style="width:90%"></div></div><span style="font-size:6px;color:var(--cyan)">+18</span></div>
+        <div class="char-stat"><span class="char-stat-label">REACT/NEXT</span><div class="char-stat-bar"><div class="char-stat-fill stat-s" style="width:88%"></div></div><span style="font-size:6px;color:var(--red)">+17</span></div>
+        <div class="char-stat"><span class="char-stat-label">SPEED</span><div class="char-stat-bar"><div class="char-stat-fill stat-d" style="width:82%"></div></div><span style="font-size:6px;color:var(--orange)">+16</span></div>
+        <div class="char-stat"><span class="char-stat-label">SYSTEMS</span><div class="char-stat-bar"><div class="char-stat-fill stat-c" style="width:78%"></div></div><span style="font-size:6px;color:var(--purple)">+15</span></div>
+      </div>
+      <div class="char-card" data-c="2" onclick="selectChar(2)" tabindex="0">
+        <canvas class="char-sprite" id="sp2" width="64" height="80"></canvas>
+        <div class="char-name">DESIGN LORD</div>
+        <div class="char-class">▸ GRAPHIC · CAD · CREATIVE</div>
+        <div class="char-stat"><span class="char-stat-label">CREATIVITY</span><div class="char-stat-bar"><div class="char-stat-fill stat-c" style="width:95%"></div></div><span style="font-size:6px;color:var(--purple)">+19</span></div>
+        <div class="char-stat"><span class="char-stat-label">FIGMA</span><div class="char-stat-bar"><div class="char-stat-fill stat-d" style="width:88%"></div></div><span style="font-size:6px;color:var(--orange)">+17</span></div>
+        <div class="char-stat"><span class="char-stat-label">VISUAL</span><div class="char-stat-bar"><div class="char-stat-fill stat-i" style="width:82%"></div></div><span style="font-size:6px;color:var(--cyan)">+16</span></div>
+        <div class="char-stat"><span class="char-stat-label">IMPACT</span><div class="char-stat-bar"><div class="char-stat-fill stat-s" style="width:75%"></div></div><span style="font-size:6px;color:var(--red)">+15</span></div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:16px">
+      <button id="choose-btn" onclick="confirmChar()">▶ CONFIRM LOADOUT</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SCREEN 3: WORLD MAP
+══════════════════════════════════════════════ -->
+<div class="screen hidden" id="worldmap">
+  <div id="hud-left">
+    <div id="hud-portrait"><canvas id="hud-cvs" width="64" height="64" style="image-rendering:pixelated"></canvas></div>
+    <div class="hud-name" id="hud-nm">SRIKUNJ G</div>
+    <div class="hud-class" id="hud-cls">DRONE PILOT</div>
+    <hr class="hdiv">
+    <div class="hud-bar-wrap">
+      <div class="hud-bar-label"><span>HP</span><span>100/100</span></div>
+      <div class="hud-bar"><div class="hf-hp"></div></div>
+    </div>
+    <div class="hud-bar-wrap">
+      <div class="hud-bar-label"><span>MP</span><span>80/100</span></div>
+      <div class="hud-bar"><div class="hf-mp"></div></div>
+    </div>
+    <div class="hud-bar-wrap">
+      <div class="hud-bar-label"><span>XP</span><span>550/1000</span></div>
+      <div class="hud-bar"><div class="hf-xp"></div></div>
+    </div>
+    <hr class="hdiv">
+    <div class="hud-sec">◈ QUEST LOG</div>
+    <div id="hud-quests"></div>
+    <div class="hud-nav">
+      <button class="hbtn" onclick="openPanel('inventory')">🎒 INVENTORY</button>
+      <button class="hbtn" onclick="openPanel('questlog')">📜 ALL QUESTS</button>
+      <button id="speedrun-btn" onclick="toggleSpeedrun()">⚡ SPEEDRUN</button>
+    </div>
+  </div>
+  <div id="map-area">
+    <div id="map-nodes"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     PANEL OVERLAY
+══════════════════════════════════════════════ -->
+<div id="panel-overlay" role="dialog" aria-modal="true">
+  <div class="panel-win" id="pwrap">
+    <div class="panel-hdr">
+      <span class="panel-title" id="ptitle">PANEL</span>
+      <button class="panel-close" onclick="closePanel()" aria-label="Close">✕</button>
+    </div>
+    <div class="panel-body" id="pbody"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     DIALOGUE BOX
+══════════════════════════════════════════════ -->
+<div id="dialogue">
+  <canvas id="dlg-portrait" width="44" height="44" style="image-rendering:pixelated"></canvas>
+  <div style="flex:1">
+    <div id="dlg-name">SYSTEM</div>
+    <div id="dlg-text">...</div>
+  </div>
+  <div id="dlg-cont">▶ CLICK</div>
+</div>
+
+<script>
+/* ─────────────────────────────────────────────────
+   DATA
+───────────────────────────────────────────────── */
+const CHARS = [
+  { name:'DRONE PILOT',  cls:'AEROSPACE · IoT ENG.', col:'#ff3a5c', body:'#2d4a22', hair:'#888', skin:'#c68642' },
+  { name:'CODE MAGE',    cls:'FULL-STACK DEV',        col:'#00e5ff', body:'#3a7bd5', hair:'#ffd600', skin:'#f9c784' },
+  { name:'DESIGN LORD',  cls:'GRAPHIC · CAD · CREATIVE',col:'#bf5fff',body:'#8a2be2', hair:'#ff7c00', skin:'#f9c784' },
+];
+const MAP_NODES = [
+  { id:'bio',       label:'ORIGIN TOWN',  icon:'🏠', lx:.20, ly:.40, col:'#39ff87',  panel:'bio' },
+  { id:'skills',    label:'SKILL SHRINE', icon:'⚔️', lx:.42, ly:.22, col:'#00e5ff',  panel:'skills' },
+  { id:'projects',  label:'BOSS DUNGEON', icon:'🐉', lx:.68, ly:.30, col:'#ff3a5c',  panel:'projects' },
+  { id:'contact',   label:'SAVE POINT',   icon:'💾', lx:.82, ly:.62, col:'#39ff87',  panel:'contact' },
+  { id:'inventory', label:'ITEM VAULT',   icon:'🎒', lx:.36, ly:.70, col:'#ffd600',  panel:'inventory' },
+];
+const ST = {
+  scr:'boot', selChar:0, confChar:0, speedrun:false,
+  visited:new Set(),
+  quests:{bio:false,skills:false,projects:false,contact:false,inventory:false,questlog:false}
+};
+
+/* ─────────────────────────────────────────────────
+   PIXEL SPRITE RENDERER
+───────────────────────────────────────────────── */
+function drawSprite(ctx, ci, w, h) {
+  ctx.clearRect(0,0,w,h);
+  const s = w/16, C = CHARS[ci];
+  ctx.fillStyle=C.skin; ctx.fillRect(5*s,1*s,6*s,5*s);
+  ctx.fillStyle=C.body; ctx.fillRect(4*s,6*s,8*s,7*s);
+  ctx.fillStyle=C.hair; ctx.fillRect(5*s,0,6*s,2*s); ctx.fillRect(4*s,s,2*s,2*s);
+  ctx.fillStyle='#000'; ctx.fillRect(6*s,3*s,s,s); ctx.fillRect(9*s,3*s,s,s);
+  ctx.fillStyle=C.body; ctx.fillRect(2*s,6*s,2*s,5*s); ctx.fillRect(12*s,6*s,2*s,5*s);
+  ctx.fillStyle='#1a1a3a'; ctx.fillRect(5*s,13*s,2*s,3*s); ctx.fillRect(9*s,13*s,2*s,3*s);
+  ctx.fillStyle='#222'; ctx.fillRect(5*s,16*s,2*s,s); ctx.fillRect(9*s,16*s,2*s,s);
+  // Unique weapon per class
+  if(ci===0){ // drone controller
+    ctx.fillStyle='#888'; ctx.fillRect(13*s,4*s,s,6*s);
+    ctx.fillStyle=C.col; ctx.fillRect(12*s,3*s,3*s,2*s);
+  } else if(ci===1){ // wand
+    ctx.fillStyle='#aaa'; ctx.fillRect(2*s,3*s,s,7*s);
+    ctx.fillStyle=C.col; ctx.fillRect(1*s,2*s,3*s,2*s);
+  } else { // brush
+    ctx.fillStyle='#f24e1e'; ctx.fillRect(2*s,3*s,s,7*s);
+    ctx.fillStyle='#fff'; ctx.fillRect(1*s,2*s,2*s,2*s);
+  }
+}
+
+/* ─────────────────────────────────────────────────
+   THREE.JS SETUP
+───────────────────────────────────────────────── */
+const canvas3d = document.getElementById('bg-canvas');
+const renderer = new THREE.WebGLRenderer({ canvas: canvas3d, antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x07071a, 0.025);
+
+const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 500);
+camera.position.set(0, 1.5, 8);
+camera.lookAt(0, 1.5, 0);
+
+// Camera targets per screen
+const CAM = {
+  boot:      { px:0, py:1.8, pz:8,   lx:0, ly:1.5, lz:0 },
+  charselect:{ px:0, py:5,   pz:14,  lx:0, ly:2,   lz:0 },
+  worldmap:  { px:2, py:22,  pz:16,  lx:2, ly:0,   lz:-2 },
+};
+let camTarget = {...CAM.boot};
+const camLookAt = new THREE.Vector3(0,1.5,0);
+const camLookTarget = new THREE.Vector3(0,1.5,0);
+
+// Lights
+const ambLight = new THREE.AmbientLight(0x111133, 1);
+scene.add(ambLight);
+const sunLight = new THREE.DirectionalLight(0xaac8ff, 1.5);
+sunLight.position.set(10, 20, 10);
+sunLight.castShadow = true;
+scene.add(sunLight);
+const blueLight = new THREE.PointLight(0x0033ff, 2, 20);
+blueLight.position.set(-5, 5, 5);
+scene.add(blueLight);
+
+// Groups
+const gStars   = new THREE.Group();
+const gBoot    = new THREE.Group();
+const gChar    = new THREE.Group();
+const gMap     = new THREE.Group();
+scene.add(gStars, gBoot, gChar, gMap);
+
+/* ─ STARS ─ */
+(function() {
+  const geo = new THREE.BufferGeometry();
+  const cnt = 2500;
+  const pos = new Float32Array(cnt*3), col = new Float32Array(cnt*3);
+  const colors = [[0.6,0.6,1],[0.4,1,0.8],[1,0.8,0.4],[0.8,0.4,1]];
+  for(let i=0;i<cnt;i++){
+    pos[i*3]   = (Math.random()-0.5)*600;
+    pos[i*3+1] = (Math.random()-0.5)*300;
+    pos[i*3+2] = (Math.random()-0.5)*600;
+    const c = colors[Math.floor(Math.random()*colors.length)];
+    col[i*3]=c[0]; col[i*3+1]=c[1]; col[i*3+2]=c[2];
+  }
+  geo.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  geo.setAttribute('color', new THREE.BufferAttribute(col,3));
+  const mat = new THREE.PointsMaterial({size:.6, vertexColors:true, transparent:true, opacity:.85, sizeAttenuation:true});
+  gStars.add(new THREE.Points(geo,mat));
+})();
+
+/* ─ BOOT GRID ─ */
+(function(){
+  const gridGeo = new THREE.BufferGeometry();
+  const verts = [];
+  const sz = 30, step = 1.5;
+  for(let x=-sz; x<=sz; x+=step){ verts.push(x,-1,-sz, x,-1,sz); }
+  for(let z=-sz; z<=sz; z+=step){ verts.push(-sz,-1,z, sz,-1,z); }
+  gridGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(verts),3));
+  const gridMat = new THREE.LineBasicMaterial({color:0x001a2a, transparent:true, opacity:0.5});
+  gBoot.add(new THREE.LineSegments(gridGeo, gridMat));
+  // Bright center lines
+  const cGeo = new THREE.BufferGeometry();
+  cGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([-sz,-1,0, sz,-1,0, 0,-1,-sz, 0,-1,sz]),3));
+  gBoot.add(new THREE.LineSegments(cGeo, new THREE.LineBasicMaterial({color:0x00e5ff, transparent:true, opacity:0.6})));
+})();
+
+/* ─ HEXACOPTER DRONE ─ */
+let drone, propellers = [];
+(function(){
+  drone = new THREE.Group();
+  // Hex body
+  const body = new THREE.Mesh(
+    new THREE.CylinderGeometry(.55,.55,.18,6),
+    new THREE.MeshPhongMaterial({color:0x1a1a4a, emissive:0x050514, shininess:120, flatShading:true})
+  );
+  drone.add(body);
+  // Camera gimbal
+  const gimbal = new THREE.Mesh(
+    new THREE.SphereGeometry(.12,8,8),
+    new THREE.MeshPhongMaterial({color:0x111111, shininess:300})
+  );
+  gimbal.position.set(0,-.2,.05);
+  drone.add(gimbal);
+  // GPS antenna
+  const gps = new THREE.Mesh(
+    new THREE.CylinderGeometry(.08,.08,.06,8),
+    new THREE.MeshPhongMaterial({color:0x00e5ff, emissive:0x00e5ff, emissiveIntensity:.4})
+  );
+  gps.position.set(0,.14,0);
+  drone.add(gps);
+  // 6 arms + motors + props
+  for(let i=0;i<6;i++){
+    const ang = (i/6)*Math.PI*2;
+    const ax = Math.cos(ang)*1.1, az = Math.sin(ang)*1.1;
+    // Arm
+    const arm = new THREE.Mesh(
+      new THREE.BoxGeometry(1.1,.05,.06),
+      new THREE.MeshPhongMaterial({color:0x2a2a6a, flatShading:true})
+    );
+    arm.rotation.y = ang;
+    arm.position.set(ax*.45, 0, az*.45);
+    drone.add(arm);
+    // Motor
+    const motor = new THREE.Mesh(
+      new THREE.CylinderGeometry(.09,.09,.14,8),
+      new THREE.MeshPhongMaterial({color:0x111133, shininess:200})
+    );
+    motor.position.set(ax,.06,az);
+    drone.add(motor);
+    // Prop disc
+    const prop = new THREE.Mesh(
+      new THREE.CylinderGeometry(.28,.28,.012,4),
+      new THREE.MeshPhongMaterial({color:0x00e5ff, transparent:true, opacity:.35, emissive:0x00e5ff, emissiveIntensity:.5})
+    );
+    prop.position.set(ax,.14,az);
+    prop.userData.spin = (i%2===0 ? 1:-1) * 14;
+    drone.add(prop);
+    propellers.push(prop);
+    // LED
+    const ledCol = i%2===0 ? 0xff2244 : 0x00ff88;
+    const led = new THREE.Mesh(
+      new THREE.SphereGeometry(.045,6,6),
+      new THREE.MeshPhongMaterial({color:ledCol, emissive:ledCol, emissiveIntensity:1})
+    );
+    led.position.set(ax*.95, 0, az*.95);
+    drone.add(led);
+    // Point light
+    const pl = new THREE.PointLight(ledCol, .25, 2);
+    pl.position.set(ax*.95, 0, az*.95);
+    drone.add(pl);
+  }
+  // Landing legs (3 legs)
+  for(let i=0;i<3;i++){
+    const ang = (i/3)*Math.PI*2;
+    const mat = new THREE.MeshPhongMaterial({color:0x333366,flatShading:true});
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(.06,.35,.06), mat);
+    leg.position.set(Math.cos(ang)*.45, -.26, Math.sin(ang)*.45);
+    drone.add(leg);
+    const foot = new THREE.Mesh(new THREE.BoxGeometry(.32,.03,.06), mat);
+    foot.position.set(Math.cos(ang)*.45, -.44, Math.sin(ang)*.45);
+    drone.add(foot);
+  }
+  drone.position.set(0, 20, 0); // start off-screen
+  gBoot.add(drone);
+
+  // Also keep reference for panel scene
+  window._droneRef = drone;
+})();
+
+/* ─ CHAR SELECT PLATFORMS ─ */
+(function(){
+  const platforms = [
+    {x:-5, col:0xff3a5c}, {x:0, col:0x00e5ff}, {x:5, col:0xbf5fff}
+  ];
+  platforms.forEach((p,i)=>{
+    const g = new THREE.Group();
+    // Island base
+    const base = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.2+(i%2)*.2,1.5+(i%2)*.2,.35,6),
+      new THREE.MeshPhongMaterial({color:p.col, transparent:true, opacity:.3, emissive:p.col, emissiveIntensity:.2, flatShading:true})
+    );
+    g.add(base);
+    // Rim
+    const rim = new THREE.Mesh(
+      new THREE.TorusGeometry(1.35,0.06,8,20),
+      new THREE.MeshPhongMaterial({color:p.col, emissive:p.col, emissiveIntensity:.6})
+    );
+    rim.rotation.x = Math.PI/2;
+    g.add(rim);
+    // Light beam
+    const beam = new THREE.Mesh(
+      new THREE.CylinderGeometry(.08,.6,6,6,1,true),
+      new THREE.MeshPhongMaterial({color:p.col, transparent:true, opacity:.08, side:THREE.DoubleSide, emissive:p.col})
+    );
+    beam.position.y = 3;
+    g.add(beam);
+    // Corner crystals
+    for(let j=0;j<4;j++){
+      const ca = (j/4)*Math.PI*2;
+      const cry = new THREE.Mesh(
+        new THREE.OctahedronGeometry(.12),
+        new THREE.MeshPhongMaterial({color:p.col, emissive:p.col, emissiveIntensity:.8, transparent:true, opacity:.7})
+      );
+      cry.position.set(Math.cos(ca)*.9,.2,Math.sin(ca)*.9);
+      cry.userData.floatPhase = j*(Math.PI/2);
+      g.add(cry);
+    }
+    g.position.set(p.x, -2, -1);
+    g.userData.baseY = -2;
+    g.userData.platformIdx = i;
+    gChar.add(g);
+  });
+  gChar.visible = false;
+})();
+
+/* ─ WORLD MAP TERRAIN ─ */
+let mapPlayerMesh;
+(function(){
+  // Terrain plane
+  const geo = new THREE.PlaneGeometry(40, 35, 55, 50);
+  geo.rotateX(-Math.PI/2);
+  const pos = geo.attributes.position;
+  // Height noise
+  function noise(x,z){ return Math.sin(x*.38)*Math.cos(z*.38)*2.2 + Math.sin(x*.8+z*.6)*.8 + Math.random()*.25; }
+  for(let i=0;i<pos.count;i++){
+    const x=pos.getX(i), z=pos.getZ(i);
+    const d = Math.sqrt(x*x+z*z);
+    if(d<3){ pos.setY(i,0); continue; }
+    // Keep paths between nodes flatter
+    const h = Math.max(-.5, noise(x,z) * Math.min(1,(d-2)/6));
+    pos.setY(i,h);
+  }
+  geo.computeVertexNormals();
+  // Vertex colors
+  const cols = new Float32Array(pos.count*3);
+  for(let i=0;i<pos.count;i++){
+    const h=pos.getY(i);
+    let r,g,b;
+    if(h>1.8){r=.85;g=.85;b=.9} // snow
+    else if(h>1.1){r=.55;g=.45;b=.35} // rock
+    else if(h>.3){r=.18;g=.52;b=.15} // grass
+    else if(h>-.1){r=.1;g=.38;b=.1} // dark grass
+    else{r=.05;g=.2;b=.08} // valley/path
+    cols[i*3]=r;cols[i*3+1]=g;cols[i*3+2]=b;
+  }
+  geo.setAttribute('color',new THREE.BufferAttribute(cols,3));
+  const mat = new THREE.MeshLambertMaterial({vertexColors:true, flatShading:true});
+  gMap.add(new THREE.Mesh(geo,mat));
+
+  // Water
+  const water = new THREE.Mesh(
+    new THREE.PlaneGeometry(50,45),
+    new THREE.MeshPhongMaterial({color:0x003355, emissive:0x001122, transparent:true, opacity:.78, shininess:100})
+  );
+  water.rotation.x=-Math.PI/2; water.position.y=-.55;
+  gMap.add(water);
+
+  // Trees (cones on cylinders)
+  function addTree(x,z){
+    const g=new THREE.Group();
+    const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.08,.1,.5,5),new THREE.MeshLambertMaterial({color:0x5c3a1a,flatShading:true}));
+    trunk.position.y=.25;g.add(trunk);
+    const top=new THREE.Mesh(new THREE.ConeGeometry(.3+Math.random()*.1,.8,5),new THREE.MeshLambertMaterial({color:0x1a5a1a,flatShading:true}));
+    top.position.y=.9;g.add(top);
+    g.position.set(x,0,z); g.scale.setScalar(.8+Math.random()*.4);
+    gMap.add(g);
+  }
+  const treePos=[[-12,-8],[-14,4],[-10,10],[8,-12],[12,-5],[14,8],[-5,-14],[6,14],[-8,12],[16,-10],[-16,6]];
+  treePos.forEach(([x,z])=>addTree(x,z));
+
+  // Location structures
+  const nodeStructures = [
+    // Bio - small village houses
+    {node:MAP_NODES[0], fn:buildVillage},
+    // Skills - obelisk tower
+    {node:MAP_NODES[1], fn:buildTower},
+    // Projects - dungeon castle
+    {node:MAP_NODES[2], fn:buildDungeon},
+    // Contact - crystal cluster
+    {node:MAP_NODES[3], fn:buildCrystal},
+    // Inventory - chest
+    {node:MAP_NODES[4], fn:buildVault},
+  ];
+  nodeStructures.forEach(({node,fn})=>{
+    const worldPos = nodeToWorld(node.lx,node.ly);
+    const struc = fn(node.col);
+    struc.position.set(worldPos.x, .1, worldPos.z);
+    gMap.add(struc);
+  });
+
+  // Player character mesh
+  const pg = new THREE.Group();
+  const pbody=new THREE.Mesh(new THREE.BoxGeometry(.4,.6,.3),new THREE.MeshPhongMaterial({color:0x3a7bd5,flatShading:true}));
+  pbody.position.y=.6; pg.add(pbody);
+  const phead=new THREE.Mesh(new THREE.BoxGeometry(.3,.3,.3),new THREE.MeshPhongMaterial({color:0xf9c784,flatShading:true}));
+  phead.position.y=1.1; pg.add(phead);
+  const pharl=new THREE.Mesh(new THREE.BoxGeometry(.12,.4,.2),new THREE.MeshPhongMaterial({color:0x3a7bd5,flatShading:true}));
+  pharl.position.set(-.26,.55,0); pg.add(pharl);
+  const pharr=pharl.clone(); pharr.position.x=.26; pg.add(pharr);
+  const plegl=new THREE.Mesh(new THREE.BoxGeometry(.16,.42,.2),new THREE.MeshPhongMaterial({color:0x1a1a4a,flatShading:true}));
+  plegl.position.set(-.12,.2,0); pg.add(plegl);
+  const plegr=plegl.clone(); plegr.position.x=.12; pg.add(plegr);
+  pg.userData.legs = [plegl,plegr];
+  pg.userData.walkPhase = 0;
+  // Glow ring under player
+  const gring=new THREE.Mesh(new THREE.TorusGeometry(.35,.04,8,24),new THREE.MeshPhongMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:1}));
+  gring.rotation.x=Math.PI/2; gring.position.y=.05;
+  pg.add(gring);
+  const startWorld = nodeToWorld(MAP_NODES[0].lx,MAP_NODES[0].ly);
+  pg.position.set(startWorld.x,.1,startWorld.z);
+  pg.userData.target = pg.position.clone();
+  gMap.add(pg);
+  mapPlayerMesh = pg;
+
+  gMap.visible = false;
+})();
+
+// Convert node percentage to world coords
+function nodeToWorld(lx,ly){
+  return { x: (lx-.5)*32, z: (ly-.5)*28 };
+}
+
+/* ─ NODE STRUCTURE BUILDERS ─ */
+function buildVillage(col){
+  const g=new THREE.Group();
+  const mats=[new THREE.MeshPhongMaterial({color:0xffd600,emissive:0x332200,flatShading:true}),
+               new THREE.MeshPhongMaterial({color:0x884422,emissive:0x221100,flatShading:true})];
+  [[0,0,.5,.5,.5],[-.8,.1,.35,.35,.4],[.7,-.1,.4,.4,.45],[-1.2,-.2,.3,.3,.35]].forEach(([x,z,w,d,h])=>{
+    const house=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mats[0]);
+    house.position.set(x,h/2,z);g.add(house);
+    const roof=new THREE.Mesh(new THREE.ConeGeometry(w*.72,.3,4),mats[1]);
+    roof.rotation.y=Math.PI/4; roof.position.set(x,h+.15,z);g.add(roof);
+  });
+  const lamp=new THREE.Mesh(new THREE.CylinderGeometry(.03,.03,.6,6),new THREE.MeshPhongMaterial({color:0x888888}));
+  lamp.position.set(0,.3,-.5);g.add(lamp);
+  const lantern=new THREE.Mesh(new THREE.BoxGeometry(.1,.1,.1),new THREE.MeshPhongMaterial({color:0xffd600,emissive:0xffd600,emissiveIntensity:1}));
+  lantern.position.set(0,.65,-.5);g.add(lantern);
+  g.add(new THREE.PointLight(0xffd680,.5,4));
+  return g;
+}
+function buildTower(col){
+  const g=new THREE.Group();
+  const mat=new THREE.MeshPhongMaterial({color:0x00e5ff,emissive:0x001a33,shininess:100,flatShading:true});
+  for(let i=0;i<5;i++){
+    const tier=new THREE.Mesh(new THREE.CylinderGeometry(.25-.03*i,.3-.03*i,.35,6),mat.clone());
+    tier.position.y=i*.32;g.add(tier);
+  }
+  const top=new THREE.Mesh(new THREE.OctahedronGeometry(.25),new THREE.MeshPhongMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:1}));
+  top.position.y=1.8;g.add(top);
+  const pl=new THREE.PointLight(0x00e5ff,2,6);pl.position.y=1.8;g.add(pl);
+  const rings=new THREE.Mesh(new THREE.TorusGeometry(.4,.02,8,30),new THREE.MeshPhongMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:.8}));
+  rings.rotation.x=Math.PI/2; rings.position.y=.9; rings.userData.spin=.5; g.add(rings);
+  g.userData.rings=rings; g.userData.topGem=top;
+  return g;
+}
+function buildDungeon(col){
+  const g=new THREE.Group();
+  const dmat=new THREE.MeshPhongMaterial({color:0x330011,emissive:0x110005,flatShading:true});
+  const cmat=new THREE.MeshPhongMaterial({color:0x1a0008,emissive:0x080003,flatShading:true});
+  // Main keep
+  const keep=new THREE.Mesh(new THREE.BoxGeometry(1.2,1.2,1.0),dmat);
+  keep.position.y=.6;g.add(keep);
+  // Towers
+  [[-0.5,-.4],[0.5,-.4],[-.5,.4],[.5,.4]].forEach(([tx,tz])=>{
+    const twr=new THREE.Mesh(new THREE.CylinderGeometry(.18,.2,.7,8),cmat.clone());
+    twr.position.set(tx,.35,tz);g.add(twr);
+    const cap=new THREE.Mesh(new THREE.ConeGeometry(.22,.25,8),new THREE.MeshPhongMaterial({color:0xff3a5c,emissive:0x440010,flatShading:true}));
+    cap.position.set(tx,.85,tz);g.add(cap);
+  });
+  const gate=new THREE.Mesh(new THREE.BoxGeometry(.35,.5,.05),new THREE.MeshPhongMaterial({color:0x000000}));
+  gate.position.set(0,.25,.52);g.add(gate);
+  const redLight=new THREE.PointLight(0xff3a5c,1.5,5);redLight.position.set(0,.8,0);g.add(redLight);
+  return g;
+}
+function buildCrystal(col){
+  const g=new THREE.Group();
+  const cmat=new THREE.MeshPhongMaterial({color:0x39ff87,emissive:0x39ff87,emissiveIntensity:.7,transparent:true,opacity:.85,shininess:200});
+  [[0,.6,.22],[-.35,.25,.16],[.38,.2,.15],[-.2,.18,.12],[.25,.35,.14],[0,0,.18]].forEach(([x,y,r])=>{
+    const c=new THREE.Mesh(new THREE.OctahedronGeometry(r),cmat.clone());
+    c.position.set(x,y,Math.random()*.2-.1); c.rotation.set(Math.random(),Math.random(),Math.random());
+    c.userData.floatPhase=Math.random()*Math.PI*2; g.add(c);
+  });
+  const glow=new THREE.PointLight(0x39ff87,3,5);glow.position.y=.4;g.add(glow);
+  return g;
+}
+function buildVault(col){
+  const g=new THREE.Group();
+  const box=new THREE.Mesh(new THREE.BoxGeometry(.9,.55,.7),new THREE.MeshPhongMaterial({color:0x7a5500,emissive:0x221100,flatShading:true}));
+  box.position.y=.27;g.add(box);
+  const lid=new THREE.Mesh(new THREE.BoxGeometry(.9,.25,.7),new THREE.MeshPhongMaterial({color:0x8a6200,emissive:0x221500,flatShading:true}));
+  lid.position.y=.66; g.add(lid);
+  // Gold trim lines
+  const trim=new THREE.Mesh(new THREE.BoxGeometry(.92,.06,.72),new THREE.MeshPhongMaterial({color:0xffd600,emissive:0xffd600,emissiveIntensity:.5}));
+  trim.position.y=.54;g.add(trim);
+  const lock=new THREE.Mesh(new THREE.BoxGeometry(.12,.12,.05),new THREE.MeshPhongMaterial({color:0xffd600,emissive:0xffd600,emissiveIntensity:.8}));
+  lock.position.set(0,.54,.37);g.add(lock);
+  const glow=new THREE.PointLight(0xffd600,.8,3);glow.position.y=.6;g.add(glow);
+  return g;
+}
+
+/* ─────────────────────────────────────────────────
+   PANEL MINI-SCENE (reusable)
+───────────────────────────────────────────────── */
+let panelRen=null, panelRaf=null, panelSceneCurrent=null;
+function startPanelScene(canvasId, setupFn){
+  stopPanelScene();
+  const c=document.getElementById(canvasId);
+  if(!c)return;
+  panelRen=new THREE.WebGLRenderer({canvas:c,antialias:true,alpha:true});
+  panelRen.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  panelRen.setSize(c.clientWidth||600,c.clientHeight||180);
+  panelRen.setClearColor(0x000000,0);
+  const {sc,cam,update}=setupFn();
+  panelSceneCurrent={sc,cam,update};
+  function loop(){panelRaf=requestAnimationFrame(loop);update();panelRen.render(sc,cam);}
+  loop();
+}
+function stopPanelScene(){
+  if(panelRaf){cancelAnimationFrame(panelRaf);panelRaf=null;}
+  if(panelRen){panelRen.dispose();panelRen=null;}
+  panelSceneCurrent=null;
+}
+function setupDroneScene(){
+  const sc=new THREE.Scene();
+  sc.fog=new THREE.FogExp2(0x07071a,.08);
+  const cam=new THREE.PerspectiveCamera(55,3.3,0.1,100);
+  cam.position.set(0,1.5,5); cam.lookAt(0,.5,0);
+  sc.add(new THREE.AmbientLight(0x112244,2));
+  const dl=new THREE.DirectionalLight(0x88ccff,2);dl.position.set(5,10,5);sc.add(dl);
+  sc.add(new THREE.PointLight(0x00e5ff,3,8));
+  // Clone drone geometry for panel
+  const d2=new THREE.Group();
+  window._droneRef.traverse(c=>{if(c.isMesh){const m=c.clone();d2.add(m);}});
+  d2.scale.setScalar(1.2);
+  sc.add(d2);
+  // Floating grid floor
+  const gg=new THREE.GridHelper(10,15,0x002244,0x001133);
+  gg.position.y=-1.5;sc.add(gg);
+  let t=0;
+  const props2=[];
+  d2.traverse(c=>{if(c.userData&&c.userData.spin)props2.push(c);});
+  return {sc,cam,update:()=>{t+=.016;d2.rotation.y+=.008;d2.position.y=Math.sin(t*.8)*.06;props2.forEach(p=>p.rotation.y+=p.userData.spin*.016);}};
+}
+function setupVTOLScene(){
+  const sc=new THREE.Scene();
+  const cam=new THREE.PerspectiveCamera(50,3.3,.1,100);
+  cam.position.set(0,2,6);cam.lookAt(0,.5,0);
+  sc.add(new THREE.AmbientLight(0x112244,2));
+  sc.add(new THREE.DirectionalLight(0x88ccff,2));
+  sc.add(new THREE.PointLight(0xff7c00,2,8));
+  // VTOL model
+  const g=new THREE.Group();
+  const bodyMat=new THREE.MeshPhongMaterial({color:0x2a3a5a,emissive:0x050814,shininess:120,flatShading:true});
+  const fuselage=new THREE.Mesh(new THREE.BoxGeometry(.5,4,.4),bodyMat.clone());
+  fuselage.rotation.z=Math.PI/2;fuselage.position.y=.5;g.add(fuselage);
+  const wing=new THREE.Mesh(new THREE.BoxGeometry(3.2,.06,.6),new THREE.MeshPhongMaterial({color:0x3a4a6a,flatShading:true}));
+  wing.position.y=.55;g.add(wing);
+  const tailFin=new THREE.Mesh(new THREE.BoxGeometry(.05,.5,.3),new THREE.MeshPhongMaterial({color:0x2a3a5a,flatShading:true}));
+  tailFin.position.set(-1.85,.8,0);g.add(tailFin);
+  // Rotors
+  const rMat=new THREE.MeshPhongMaterial({color:0x00e5ff,transparent:true,opacity:.4,emissive:0x00e5ff,emissiveIntensity:.4});
+  [[-1.3,.55,0],[1.3,.55,0]].forEach(([x,y,z])=>{
+    const hub=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.1,8),new THREE.MeshPhongMaterial({color:0x222244}));
+    hub.position.set(x,y,z);g.add(hub);
+    const disc=new THREE.Mesh(new THREE.CylinderGeometry(.35,.35,.015,3),rMat.clone());
+    disc.position.set(x,y+.08,z);disc.userData.spin=12;g.add(disc);
+  });
+  // Thermal cam pod
+  const pod=new THREE.Mesh(new THREE.SphereGeometry(.12,8,8),new THREE.MeshPhongMaterial({color:0x111111,emissive:0xff3a00,emissiveIntensity:.3}));
+  pod.position.set(0,.18,0);g.add(pod);
+  g.scale.setScalar(.9);
+  sc.add(g);
+  const gg=new THREE.GridHelper(10,15,0x001a33,0x000a22);gg.position.y=-.5;sc.add(gg);
+  const props=[];
+  g.traverse(c=>{if(c.userData&&c.userData.spin)props.push(c);});
+  let t=0;
+  return {sc,cam,update:()=>{t+=.016;g.rotation.y+=.006;g.position.y=Math.sin(t*.7)*.06;props.forEach(p=>p.rotation.y+=p.userData.spin*.016);}};
+}
+function setupSkillsScene(){
+  const sc=new THREE.Scene();
+  const cam=new THREE.PerspectiveCamera(60,3.5,.1,100);
+  cam.position.set(0,0,9);cam.lookAt(0,0,0);
+  sc.add(new THREE.AmbientLight(0x112244,2));
+  const orbCols=[0x00e5ff,0xffd600,0xff3a5c,0x39ff87,0xbf5fff,0xff7c00,0x00ff44,0xff9900];
+  const orbs=[];
+  orbCols.forEach((c,i)=>{
+    const ang=(i/orbCols.length)*Math.PI*2;
+    const rad=2.8;
+    const orb=new THREE.Mesh(
+      new THREE.IcosahedronGeometry(.3,1),
+      new THREE.MeshPhongMaterial({color:c,emissive:c,emissiveIntensity:.5,shininess:200,transparent:true,opacity:.85})
+    );
+    orb.position.set(Math.cos(ang)*rad,Math.sin(ang)*.5,Math.sin(ang)*rad*.6);
+    orb.userData.ang=ang; orb.userData.rad=rad; orb.userData.orbIdx=i;
+    sc.add(orb);
+    const pl=new THREE.PointLight(c,.5,2);pl.position.copy(orb.position);sc.add(pl);
+    orb.userData.light=pl;
+    orbs.push(orb);
+  });
+  let t=0;
+  return {sc,cam,update:()=>{t+=.012;orbs.forEach(o=>{const a=o.userData.ang+t*.3;const r=o.userData.rad;o.position.set(Math.cos(a)*r,Math.sin(a+t*.5)*.5,Math.sin(a)*r*.6);o.userData.light.position.copy(o.position);o.rotation.x+=.01;o.rotation.y+=.007;});}};
+}
+function setupBioScene(){
+  const sc=new THREE.Scene();
+  const cam=new THREE.PerspectiveCamera(50,1.2,.1,100);
+  cam.position.set(0,0,4);cam.lookAt(0,0,0);
+  sc.add(new THREE.AmbientLight(0x112244,1.5));
+  sc.add(new THREE.DirectionalLight(0x88ccff,2));
+  // Earth-like sphere
+  const geo=new THREE.IcosahedronGeometry(1,4);
+  const pos=geo.attributes.position;
+  const cols=new Float32Array(pos.count*3);
+  for(let i=0;i<pos.count;i++){
+    const x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+    const n=Math.sin(x*4.5)*Math.cos(y*4.5)*Math.sin(z*3.5);
+    if(n>.1){cols[i*3]=0.1;cols[i*3+1]=0.45;cols[i*3+2]=0.15;}
+    else{cols[i*3]=0.06;cols[i*3+1]=0.28;cols[i*3+2]=0.62;}
+  }
+  geo.setAttribute('color',new THREE.BufferAttribute(cols,3));
+  const earth=new THREE.Mesh(geo,new THREE.MeshPhongMaterial({vertexColors:true,shininess:80,flatShading:true}));
+  sc.add(earth);
+  // Orbit ring
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(1.5,.03,8,60),new THREE.MeshPhongMaterial({color:0x00e5ff,emissive:0x00e5ff,emissiveIntensity:.6}));
+  ring.rotation.x=Math.PI*.35;sc.add(ring);
+  // Orbiting satellite dot
+  const sat=new THREE.Mesh(new THREE.OctahedronGeometry(.08),new THREE.MeshPhongMaterial({color:0xffd600,emissive:0xffd600,emissiveIntensity:1}));
+  sc.add(sat);
+  let t=0;
+  return {sc,cam,update:()=>{t+=.012;earth.rotation.y+=.005;ring.rotation.z+=.003;sat.position.set(Math.cos(t)*1.5,Math.sin(t*.5)*.3,Math.sin(t)*1.5);}};
+}
+
+/* ─────────────────────────────────────────────────
+   SCENE STATE MACHINE
+───────────────────────────────────────────────── */
+function setScene(name){
+  gBoot.visible  = (name==='boot'||name==='charselect');
+  gChar.visible  = (name==='charselect');
+  gMap.visible   = (name==='worldmap');
+  const t=CAM[name]||CAM.boot;
+  camTarget={px:t.px,py:t.py,pz:t.pz};
+  camLookTarget.set(t.lx,t.ly,t.lz);
+  scene.fog.density = name==='worldmap'?.012:.02;
+}
+
+/* ─────────────────────────────────────────────────
+   SCREEN TRANSITIONS
+───────────────────────────────────────────────── */
+function goScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  ST.scr=id;
+  setScene(id==='worldmap'?'worldmap':id==='charselect'?'charselect':'boot');
+}
+
+/* ─────────────────────────────────────────────────
+   BOOT
+───────────────────────────────────────────────── */
+let bootReady=false;
+function initBoot(){
+  // Animate drone flying in
+  drone.position.set(0,8,0);
+  drone.rotation.y=0;
+  let flew=false;
+  function droneFlyIn(){
+    drone.position.y*=.94;
+    if(drone.position.y>1.6){requestAnimationFrame(droneFlyIn);}
+    else{drone.position.y=1.6; flew=true;}
+  }
+  setTimeout(droneFlyIn, 200);
+  setTimeout(()=>{bootReady=true;},6200);
+  // Draw char sprites
+  setTimeout(()=>{
+    for(let i=0;i<3;i++){
+      const c=document.getElementById(`sp${i}`);
+      if(!c)return;
+      const ctx=c.getContext('2d');ctx.imageSmoothingEnabled=false;
+      drawSprite(ctx,i,64,80);
+    }
+  },300);
+  document.addEventListener('keydown',handleBootKey);
+  document.addEventListener('click',handleBootKey);
+}
+function handleBootKey(){
+  if(!bootReady)return;
+  document.removeEventListener('keydown',handleBootKey);
+  document.removeEventListener('click',handleBootKey);
+  goScreen('charselect');
+  setTimeout(()=>showDialogue('SYSTEM VOICE','Welcome, Recruiter! I am SRIKUNJ G — Drone Pilot, Code Mage & Design Lord. Choose how you want to explore my world!'),700);
+}
+
+/* ─────────────────────────────────────────────────
+   CHARACTER SELECT
+───────────────────────────────────────────────── */
+function selectChar(i){
+  ST.selChar=i;
+  document.querySelectorAll('.char-card').forEach((c,idx)=>c.classList.toggle('selected',idx===i));
+  // Highlight matching platform
+  gChar.children.forEach((p,pi)=>{
+    p.userData.selected=(pi===i);
+  });
+}
+selectChar(0);
+function confirmChar(){
+  ST.confChar=ST.selChar;
+  const C=CHARS[ST.confChar];
+  // Set HUD
+  document.getElementById('hud-nm').textContent='SRIKUNJ G';
+  document.getElementById('hud-cls').textContent=C.name;
+  // Draw HUD portrait
+  const hc=document.getElementById('hud-cvs');
+  const ctx=hc.getContext('2d');ctx.imageSmoothingEnabled=false;
+  drawSprite(ctx,ST.confChar,64,64);
+  // Update player color
+  if(mapPlayerMesh){
+    mapPlayerMesh.children[0].material.color.setHex(parseInt(C.body.replace('#','0x')));
+  }
+  goScreen('worldmap');
+  buildMapNodes();
+  updateQuestHUD();
+  setTimeout(()=>showDialogue('SRIKUNJ G',`Loadout: ${C.name}. The World Map awaits. Click any location to begin your quest!`),600);
+}
+
+/* ─────────────────────────────────────────────────
+   WORLD MAP NODES (HTML overlay)
+───────────────────────────────────────────────── */
+function buildMapNodes(){
+  const wrap=document.getElementById('map-nodes');
+  wrap.innerHTML='';
+  MAP_NODES.forEach(n=>{
+    const el=document.createElement('div');
+    el.className='map-node'+(ST.visited.has(n.id)?' vis':'');
+    el.id='mn-'+n.id;
+    el.style.left=(n.lx*100)+'%';
+    el.style.top=(n.ly*100)+'%';
+    el.innerHTML=`
+      <div class="node-icon" style="border-color:${n.col};box-shadow:4px 4px 0 #000,0 0 14px ${n.col}55">${n.icon}</div>
+      <div class="node-label" style="border:2px solid ${n.col}44">${n.label}</div>
+      <div class="node-badge">✓</div>`;
+    el.setAttribute('role','button');el.setAttribute('tabindex','0');
+    el.onclick=()=>visitNode(n);
+    el.onkeydown=e=>{if(e.key==='Enter'||e.key===' ')visitNode(n);};
+    wrap.appendChild(el);
+  });
+}
+
+/* ─────────────────────────────────────────────────
+   VISIT NODE + PLAYER MOVEMENT
+───────────────────────────────────────────────── */
+function visitNode(node){
+  const flash=document.getElementById('battle-flash');
+  if(!ST.speedrun){flash.classList.add('flash');setTimeout(()=>flash.classList.remove('flash'),120);}
+  // Move 3D player
+  if(mapPlayerMesh){
+    const wp=nodeToWorld(node.lx,node.ly);
+    mapPlayerMesh.userData.target=new THREE.Vector3(wp.x,.1,wp.z);
+  }
+  ST.visited.add(node.id);
+  document.getElementById('mn-'+node.id)?.classList.add('vis');
+  ST.quests[node.id]=true;
+  updateQuestHUD();
+  setTimeout(()=>openPanel(node.panel), ST.speedrun?0:500);
+}
+
+/* ─────────────────────────────────────────────────
+   PANELS
+───────────────────────────────────────────────── */
+const PANEL_CONFIGS={
+  bio:{t:'🏠 ORIGIN STORY — BIO',col:'#39ff87',fn:renderBio},
+  skills:{t:'⚔ SKILL SHRINE — ABILITIES',col:'#00e5ff',fn:renderSkills},
+  projects:{t:'🐉 BOSS DUNGEON — PROJECTS',col:'#ff3a5c',fn:renderProjects},
+  contact:{t:'💾 SAVE POINT — CONTACT',col:'#39ff87',fn:renderContact},
+  inventory:{t:'🎒 ITEM VAULT — INVENTORY',col:'#ffd600',fn:renderInventory},
+  questlog:{t:'📜 QUEST LOG — PROGRESS',col:'#bf5fff',fn:renderQuestLog},
+};
+function openPanel(type){
+  ST.quests[type]=true;updateQuestHUD();
+  const p=PANEL_CONFIGS[type]; if(!p)return;
+  document.getElementById('ptitle').textContent=p.t;
+  document.getElementById('pwrap').style.borderColor=p.col;
+  document.getElementById('pwrap').style.boxShadow=`6px 6px 0 #000, 0 0 30px ${p.col}33`;
+  document.getElementById('pbody').innerHTML=p.fn();
+  document.getElementById('panel-overlay').classList.add('open');
+  // Animate skill bars
+  if(type==='skills'){
+    setTimeout(()=>document.querySelectorAll('.sk-fill').forEach(b=>b.style.width=b.dataset.w),ST.speedrun?0:120);
+  }
+  // Start panel 3D scene
+  const sceneMap={bio:setupBioScene,skills:setupSkillsScene,projects:setupDroneScene};
+  setTimeout(()=>{
+    if(sceneMap[type]) startPanelScene('panel-3d-canvas',sceneMap[type]);
+  }, 100);
+}
+function closePanel(){
+  document.getElementById('panel-overlay').classList.remove('open');
+  stopPanelScene();
+}
+document.getElementById('panel-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('panel-overlay'))closePanel();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closePanel();});
+
+/* ─────────────────────────────────────────────────
+   PANEL RENDERERS
+───────────────────────────────────────────────── */
+function renderBio(){
+  return `
+  <canvas id="panel-3d-canvas" style="width:100%;height:180px;display:block;margin-bottom:16px;border:2px solid var(--border)"></canvas>
+  <div class="bio-grid">
+    <div>
+      <div class="bio-portrait"><canvas id="bio-sp" width="120" height="140" style="image-rendering:pixelated"></canvas></div>
+      <div style="margin-top:8px;font-size:6px;color:var(--dim);text-align:center">LVL 20 RENAISSANCE ENG.</div>
+    </div>
+    <div class="bio-text">
+      <h2>SRIKUNJ GARG</h2>
+      <div class="bio-sub">DRONE PILOT · CODE MAGE · DESIGN LORD</div>
+      <p>A dynamic and multifaceted individual with a passion for exploring both the cosmos and cutting-edge technology. Curiosity about aerospace and astronomy fuels a fascination with the universe, while a love for robotics and building drives innovation.</p>
+      <p>Blending logic and creativity to craft digital experiences. Active sports enthusiast — badminton & cricket. Passion for music and dance. A builder, creator, and explorer embracing the spirit of a modern Renaissance person.</p>
+      <div>
+        <span class="rpg-tag r">AEROSPACE ✦</span>
+        <span class="rpg-tag">ROBOTICS</span>
+        <span class="rpg-tag g">WEB DEV</span>
+        <span class="rpg-tag y">IoT ENG.</span>
+        <span class="rpg-tag">DESIGN</span>
+        <span class="rpg-tag g">FREELANCER</span>
+        <span class="rpg-tag y">OPEN TO QUESTS</span>
+      </div>
+    </div>
+  </div>
+  <script>
+    setTimeout(()=>{const c=document.getElementById('bio-sp');if(!c)return;const ctx=c.getContext('2d');ctx.imageSmoothingEnabled=false;drawSprite(ctx,${ST.confChar},120,140);},50);
+  <\/script>`;
+}
+function renderSkills(){
+  const skills=[
+    {n:'React.js',v:90,c:'#61dafb'},{n:'Next.js',v:82,c:'#ffffff'},
+    {n:'JavaScript',v:88,c:'#f7df1e'},{n:'ROS',v:85,c:'#ff7c00'},
+    {n:'Gazebo Sim',v:78,c:'#ff4444'},{n:'SolidWorks',v:72,c:'#e00'},
+    {n:'Figma',v:86,c:'#f24e1e'},{n:'Photoshop',v:82,c:'#31a8ff'},
+    {n:'Python',v:76,c:'#3572a5'},{n:'IoT/Hardware',v:84,c:'#39ff87'},
+    {n:'Raspberry Pi',v:80,c:'#c51a4a'},{n:'Autonomous Sys',v:87,c:'#bf5fff'},
+  ];
+  return `
+  <canvas id="panel-3d-canvas" style="width:100%;height:180px;display:block;margin-bottom:14px;border:2px solid var(--border)"></canvas>
+  <div class="skills-title">▶ CORE ABILITY SCORES</div>
+  ${skills.map(s=>`
+    <div class="sk-row">
+      <div class="sk-name">${s.n}</div>
+      <div class="sk-bar"><div class="sk-fill" data-w="${s.v}%" style="background:${s.c};width:0"></div></div>
+      <div class="sk-lv">Lv.${Math.floor(s.v/10)}</div>
+      <div class="sk-bonus">+${Math.floor(s.v/5)}</div>
+    </div>`).join('')}
+  <div class="skills-title">▶ PASSIVE TRAITS</div>
+  <div class="passive-grid">
+    ${['Autonomous Nav','ArUco Landing','LiDAR/Opt-Flow','Full-Stack','Problem Solve','Aerospace','Team Player','Clean Code','Fast Learner'].map(p=>`<div class="passive">✦ ${p}</div>`).join('')}
+  </div>`;
+}
+function renderProjects(){
+  const projects=[
+    {
+      stage:'PROJECT 1',name:'AUTONOMOUS DELIVERY HEXACOPTER',ico:'🚁',
+      desc:'Autonomous delivery of goods to disaster-prone areas, plus identification of survivors on ground using aerial systems.',
+      hp:90, techs:['ROS','Raspberry Pi 5','LiDAR','Optical Flow','ArUco Landing','Autonomous Nav'],
+      loot:[
+        {g:'lg',t:'Autonomous GPS-denied navigation in hazardous zones'},
+        {g:'lb',t:'ArUco marker precision landing — sub-10cm accuracy'},
+        {g:'lp',t:'Survivor detection pipeline via onboard vision'},
+      ],
+      hasScene:true, sceneFn:'setupDroneScene'
+    },
+    {
+      stage:'PROJECT 2',name:'DYSCARE — DYSLEXIA & DYSGRAPHIA DETECTION',ico:'🧠',
+      desc:'Children with dyslexia and dysgraphia often go undetected until late in life. Dyscare provides quick analysis to identify potential victims and recommend intervention pathways.',
+      hp:75, techs:['Machine Learning','JavaScript','React.js','Supabase'],
+      loot:[
+        {g:'lg',t:'Early-stage detection engine with ML classifier'},
+        {g:'lb',t:'React dashboard for clinicians & parents'},
+        {g:'lp',t:'Supabase real-time data & auth pipeline'},
+      ],
+      hasScene:false
+    },
+    {
+      stage:'FINAL BOSS',name:'AUTONOMOUS VTOL — DISASTER SURVEILLANCE',ico:'✈️',
+      desc:'On-ground vehicles and manpower require excessive time to locate survivors in disaster zones. This VTOL cuts response time dramatically using airborne thermal imaging.',
+      hp:95, techs:['SpeedyBee FC','Autonomous Sys','Telemetry','Thermal Camera','Mission Planner'],
+      loot:[
+        {g:'lg',t:'Thermal victim detection — works day & night'},
+        {g:'lb',t:'Autonomous waypoint missions over disaster zones'},
+        {g:'lp',t:'Real-time telemetry & live video downlink'},
+      ],
+      hasScene:true, sceneFn:'setupVTOLScene'
+    },
+  ];
+  return `
+  <canvas id="panel-3d-canvas" style="width:100%;height:200px;display:block;margin-bottom:14px;border:2px solid var(--red)44"></canvas>
+  ${projects.map((p,i)=>`
+    <div class="boss-card">
+      <div class="boss-hdr">
+        <div class="boss-ico">${p.ico}</div>
+        <div><div class="boss-stage">${p.stage}</div><div class="boss-name">${p.name}</div></div>
+        ${p.hasScene?`<button onclick="startPanelScene('panel-3d-canvas',${p.sceneFn})" style="margin-left:auto;background:var(--panel);border:2px solid var(--cyan);color:var(--cyan);font-family:'Press Start 2P',monospace;font-size:6px;padding:4px 8px;cursor:pointer">3D VIEW</button>`:''}
+      </div>
+      <div class="boss-body">
+        <div class="boss-hp-lbl">CHALLENGE LEVEL</div>
+        <div class="boss-hp-bar"><div class="boss-hp-fill" style="width:${p.hp}%"></div></div>
+        <div class="boss-desc">${p.desc}</div>
+        <div class="boss-tech">${p.techs.map(t=>`<span class="tech-badge">${t}</span>`).join('')}</div>
+        <div class="loot-sec">
+          <div class="loot-title">🏆 OUTCOME LOOT DROPS</div>
+          ${p.loot.map(l=>`<div class="loot-item"><div class="loot-gem ${l.g}"></div><span>${l.t}</span></div>`).join('')}
+        </div>
+      </div>
+    </div>`).join('')}`;
+}
+function renderContact(){
+  return `
+  <div class="save-wrap">
+    <div class="save-orb"></div>
+    <div class="save-title">SAVE POINT REACHED</div>
+    <div class="save-sub">PROGRESS SAVED — SEND A MESSAGE TO START CO-OP MODE</div>
+    <div class="c-links">
+      <a class="c-link" href="mailto:srikunj.g@gmail.com"><span class="c-ico">📧</span>srikunj.g@gmail.com</a>
+      <a class="c-link" href="https://www.linkedin.com/in/srikunj/" target="_blank"><span class="c-ico">🔗</span>LINKEDIN — /in/srikunj</a>
+      <a class="c-link" href="https://github.com/Sri-2006" target="_blank"><span class="c-ico">🐙</span>GITHUB — Sri-2006</a>
+      <a class="c-link" href="#" onclick="openPanel('inventory');return false;"><span class="c-ico">📄</span>GET RÉSUMÉ</a>
+    </div>
+    <div style="margin-top:20px;font-size:6px;color:var(--dim)">⚡ RESPONSE: &lt;24H &nbsp;|&nbsp; 🌍 LOCATION: INDIA &nbsp;|&nbsp; 🚀 REMOTE READY</div>
+  </div>`;
+}
+function renderInventory(){
+  const items=[
+    {ico:'📄',n:'RÉSUMÉ 2025',r:'r-leg',rl:'★ LEGENDARY'},
+    {ico:'🏆',n:'PROJECT FILES',r:'r-rare',rl:'◆ RARE'},
+    {ico:'🎓',n:'CERTIFICATES',r:'r-rare',rl:'◆ RARE'},
+    {ico:'🚁',n:'DRONE SPECS',r:'r-rare',rl:'◆ RARE'},
+    {ico:'🎨',n:'DESIGN PACK',r:'r-com',rl:'▸ COMMON'},
+    {ico:'📊',n:'METRICS PDF',r:'r-rare',rl:'◆ RARE'},
+    {ico:'🔗',n:'OSS LINKS',r:'r-com',rl:'▸ COMMON'},
+    {ico:'📝',n:'REFERENCES',r:'r-com',rl:'▸ COMMON'},
+    null,null,null,null
+  ];
+  return `
+  <div style="text-align:center;margin-bottom:16px">
+    <span class="chest-ico">📦</span>
+    <div style="font-size:8px;color:var(--yellow);margin-top:6px">ITEM VAULT UNLOCKED</div>
+    <div style="font-size:6px;color:var(--dim);margin-top:3px">Click an item to collect. Legendary items link to real downloads.</div>
+  </div>
+  <div class="inv-grid">
+    ${items.map(item=>item?`
+      <div class="inv-slot" onclick="showDialogue('ITEM',\"${item.n}: ${item.r==='r-leg'?'Link your download here!':`Contact Srikunj to unlock this item!`}\")">
+        <span class="inv-rar ${item.r}">${item.rl}</span>
+        <span class="inv-ico">${item.ico}</span>
+        <span class="inv-nm">${item.n}</span>
+      </div>
+    `:`<div class="inv-slot empty"><span class="inv-ico" style="font-size:16px;opacity:.2">—</span></div>`).join('')}
+  </div>`;
+}
+function renderQuestLog(){
+  const quests=[
+    {id:'bio',n:'VISIT ORIGIN TOWN',xp:150},
+    {id:'skills',n:'UNLOCK SKILL SHRINE',xp:200},
+    {id:'projects',n:'DEFEAT BOSS DUNGEON',xp:500},
+    {id:'contact',n:'REACH THE SAVE POINT',xp:100},
+    {id:'inventory',n:'OPEN ITEM VAULT',xp:250},
+    {id:'questlog',n:'CHECK THE QUEST LOG',xp:50},
+  ];
+  const done=quests.filter(q=>ST.quests[q.id]).length;
+  const pct=Math.round(done/quests.length*100);
+  const totalXP=quests.filter(q=>ST.quests[q.id]).reduce((a,q)=>a+q.xp,0);
+  const r=34, circ=2*Math.PI*r;
+  return `
+  <div class="ql-header">
+    <svg width="90" height="90" viewBox="0 0 90 90">
+      <circle cx="45" cy="45" r="${r}" fill="none" stroke="#1a1a3a" stroke-width="9"/>
+      <circle cx="45" cy="45" r="${r}" fill="none" stroke="var(--green)" stroke-width="9"
+        stroke-dasharray="${circ}" stroke-dashoffset="${circ*(1-pct/100)}"
+        transform="rotate(-90 45 45)" style="transition:stroke-dashoffset 1.2s ease"/>
+      <text x="45" y="49" text-anchor="middle" fill="var(--green)" font-family="'Press Start 2P'" font-size="12">${pct}%</text>
+    </svg>
+    <div>
+      <span class="ql-pct">${done}/${quests.length} QUESTS</span>
+      <span class="ql-sub">TOTAL XP: ${totalXP}</span><br>
+      <span class="ql-sub" style="margin-top:4px">${100-pct}% UNEXPLORED</span>
+    </div>
+  </div>
+  ${quests.map(q=>`
+    <div class="ql-item ${ST.quests[q.id]?'done':''}">
+      <span class="ql-chk">${ST.quests[q.id]?'✅':'⬜'}</span>
+      <span class="ql-nm">${q.n}</span>
+      <span class="ql-xp">${ST.quests[q.id]?'+'+q.xp+' XP':'???'}</span>
+    </div>`).join('')}
+  <div class="ql-total">${pct===100?'🏆 ALL QUESTS COMPLETE — HIRE SRIKUNJ!':'⚡ EXPLORE MORE TO UNLOCK XP'}</div>`;
+}
+
+/* ─────────────────────────────────────────────────
+   QUEST HUD
+───────────────────────────────────────────────── */
+function updateQuestHUD(){
+  const w=document.getElementById('hud-quests');if(!w)return;
+  const qs=[{id:'bio',n:'ORIGIN'},{id:'skills',n:'SHRINE'},{id:'projects',n:'DUNGEON'},{id:'contact',n:'SAVE PT'},{id:'inventory',n:'VAULT'}];
+  w.innerHTML=qs.map(q=>`
+    <div class="quest-mini" onclick="visitNode(MAP_NODES.find(n=>n.id==='${q.id}'))">
+      <span class="qi ${ST.quests[q.id]?'':'e'}">${ST.quests[q.id]?'✓':'○'}</span><span>${q.n}</span>
+    </div>`).join('');
+}
+
+/* ─────────────────────────────────────────────────
+   SPEEDRUN
+───────────────────────────────────────────────── */
+function toggleSpeedrun(){
+  ST.speedrun=!ST.speedrun;
+  const btn=document.getElementById('speedrun-btn');
+  btn.classList.toggle('on',ST.speedrun);
+  btn.textContent=ST.speedrun?'⚡ SPEEDRUN: ON':'⚡ SPEEDRUN';
+  document.documentElement.style.setProperty('--spd',ST.speedrun?'0':'1');
+  document.getElementById('crt').style.display=ST.speedrun?'none':'block';
+  showDialogue('SYSTEM',ST.speedrun?'SPEEDRUN: ON — Animations cut. Pure info mode.':'SPEEDRUN: OFF — Full experience restored.');
+}
+
+/* ─────────────────────────────────────────────────
+   DIALOGUE
+───────────────────────────────────────────────── */
+let dlgTimer=null;
+function showDialogue(name,text){
+  const d=document.getElementById('dialogue');
+  document.getElementById('dlg-name').textContent=name;
+  document.getElementById('dlg-text').textContent=text;
+  const dp=document.getElementById('dlg-portrait');
+  if(ST.confChar!==null){const ctx=dp.getContext('2d');ctx.imageSmoothingEnabled=false;drawSprite(ctx,ST.confChar,44,44);}
+  d.classList.add('show');
+  if(dlgTimer)clearTimeout(dlgTimer);
+  dlgTimer=setTimeout(()=>d.classList.remove('show'),5500);
+  d.onclick=()=>{d.classList.remove('show');clearTimeout(dlgTimer);};
+}
+
+/* ─────────────────────────────────────────────────
+   RESIZE
+───────────────────────────────────────────────── */
+function onResize(){
+  const w=window.innerWidth, h=window.innerHeight;
+  renderer.setSize(w,h);
+  camera.aspect=w/h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize',onResize);
+onResize();
+
+/* ─────────────────────────────────────────────────
+   MOUSE INTERACTION
+───────────────────────────────────────────────── */
+const mouse={x:0,y:0};
+window.addEventListener('mousemove',e=>{
+  mouse.x=(e.clientX/window.innerWidth-.5)*2;
+  mouse.y=(e.clientY/window.innerHeight-.5)*2;
+});
+
+/* ─────────────────────────────────────────────────
+   ANIMATION LOOP
+───────────────────────────────────────────────── */
+const clock=new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=clock.getDelta(), t=clock.getElapsedTime();
+
+  // Stars slow rotation
+  gStars.rotation.y+=.00008;
+  gStars.rotation.x=mouse.y*.015;
+
+  // Camera lerp
+  const lf=1-Math.pow(.012,dt);
+  camera.position.x+=(camTarget.px-camera.position.x)*lf;
+  camera.position.y+=(camTarget.py-camera.position.y)*lf;
+  camera.position.z+=(camTarget.pz-camera.position.z)*lf;
+  camLookAt.lerp(camLookTarget,.04);
+  camera.lookAt(camLookAt);
+
+  // Mouse parallax on non-map screens
+  if(ST.scr!=='worldmap'){
+    camera.position.x+=mouse.x*.6;
+    camera.position.y-=mouse.y*.3;
+  }
+
+  // Drone
+  if(gBoot.visible&&drone){
+    drone.rotation.y+=.008;
+    drone.position.y=1.6+Math.sin(t*.9)*.1;
+    drone.rotation.z=Math.sin(t*.5)*.03;
+    propellers.forEach(p=>p.rotation.y+=p.userData.spin*dt);
+  }
+
+  // Char select platforms
+  if(gChar.visible){
+    gChar.children.forEach((plat,i)=>{
+      const sel=plat.userData.selected;
+      const targetY=sel?-1:-2;
+      plat.position.y+=(targetY-plat.position.y)*.06;
+      plat.rotation.y+=.005;
+      // Float crystals
+      plat.children.forEach(c=>{
+        if(c.userData&&c.userData.floatPhase!==undefined){
+          c.position.y=.2+Math.sin(t+c.userData.floatPhase)*.07;
+        }
+      });
+    });
+  }
+
+  // World map
+  if(gMap.visible){
+    // Move player toward target
+    if(mapPlayerMesh&&mapPlayerMesh.userData.target){
+      const tgt=mapPlayerMesh.userData.target;
+      const diff=tgt.clone().sub(mapPlayerMesh.position);
+      const dist=diff.length();
+      if(dist>.05){
+        mapPlayerMesh.position.addScaledVector(diff.normalize(),Math.min(dist,dt*6));
+        // Face movement direction
+        mapPlayerMesh.rotation.y=Math.atan2(diff.x,diff.z);
+        // Walk animation
+        mapPlayerMesh.userData.walkPhase+=dt*8;
+        const wp=mapPlayerMesh.userData.walkPhase;
+        if(mapPlayerMesh.userData.legs){
+          mapPlayerMesh.userData.legs[0].rotation.x=Math.sin(wp)*.3;
+          mapPlayerMesh.userData.legs[1].rotation.x=Math.sin(wp+Math.PI)*.3;
+        }
+      } else {
+        if(mapPlayerMesh.userData.legs){
+          mapPlayerMesh.userData.legs[0].rotation.x=0;
+          mapPlayerMesh.userData.legs[1].rotation.x=0;
+        }
+      }
+    }
+    // Animate node structures
+    gMap.children.forEach(obj=>{
+      if(obj.userData&&obj.userData.rings){
+        obj.userData.rings.rotation.y+=dt*.5;
+      }
+      if(obj.userData&&obj.userData.topGem){
+        obj.userData.topGem.position.y=1.8+Math.sin(t*2)*.06;
+      }
+      // Crystal float
+      obj.traverse(c=>{
+        if(c.userData&&c.userData.floatPhase!==undefined){
+          c.position.y=(.2+c.userData.floatPhase*.01)+Math.sin(t*1.5+c.userData.floatPhase)*.05;
+        }
+      });
+    });
+    // Subtle camera drift with mouse
+    gMap.rotation.y=mouse.x*.01;
+  }
+
+  renderer.render(scene,camera);
+}
+
+/* ─────────────────────────────────────────────────
+   INIT
+───────────────────────────────────────────────── */
+window.drawSprite=drawSprite;
+window.startPanelScene=startPanelScene;
+window.setupDroneScene=setupDroneScene;
+window.setupVTOLScene=setupVTOLScene;
+window.MAP_NODES=MAP_NODES;
+window.visitNode=visitNode;
+window.openPanel=openPanel;
+
+setScene('boot');
+initBoot();
+animate();
+</script>
+</body>
+</html>
